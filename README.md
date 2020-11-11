@@ -41,4 +41,18 @@ The port `31147` in this case is no accessible on any node ip. The following com
 kubectl get nodes -o jsonpath={.items[*].status.addresses[].address}
 172.18.0.2 172.18.0.3
 ```
+### Kafka Transactions
+The folder [transactions](./transactions) contains some examples and experiments with Kafka transactions.\
+One of the examples for python is derived from [this example](https://github.com/confluentinc/confluent-kafka-python/blob/master/examples/eos-transactions.py)
 
+### Findings
+In order to be able to read `uncommitted` messages as a consumer. The producer needs to call `flush` after sending the message:
+```python
+producer.begin_transaction()
+producer.produce(topic_name, f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
+producer.flush()
+...
+producer.abort_transaction()
+... or
+producer.commit_transaction()
+```

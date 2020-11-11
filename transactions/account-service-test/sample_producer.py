@@ -35,6 +35,7 @@ for i in range(10):
 
     producer.begin_transaction()
     producer.produce(topic_name, f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
+    producer.flush()
 
     if (amount % 2) == 0:
         print(f'Aborting transaction for account event {accountEventId}')
