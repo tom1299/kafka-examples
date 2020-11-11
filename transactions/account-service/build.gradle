@@ -40,7 +40,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClassName = 'com.tom.kafka.examples.account.service.App'
+    mainClassName = 'com.tom.kafka.examples.account.service.AccountService'
 }
 
 test {

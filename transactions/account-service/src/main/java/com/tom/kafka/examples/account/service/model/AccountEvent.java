@@ -7,6 +7,7 @@ import lombok.Builder.Default;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class AccountEvent {
 	
 	public enum Status {
@@ -48,6 +49,7 @@ public class AccountEvent {
 	
 	private String accountNumber;
 
+	@Builder.Default
 	private Status status = Status.NEW;
 
 	private Type type;

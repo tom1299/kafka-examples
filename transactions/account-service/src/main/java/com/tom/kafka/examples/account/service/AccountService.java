@@ -53,7 +53,7 @@ public class AccountService {
 
     private Long aggregate(String account, AccountEvent accountEvent,
                            Long currentBalance) {
-        log.debug("Processing account event {}", accountEvent);
+        log.info("Processing account event for user {}", account);
         long newBalance = 0l;
         if (accountEvent.getType() == AccountEvent.Type.DEPOSIT) {
             newBalance = handleDeposit(accountEvent, currentBalance);
@@ -67,12 +67,12 @@ public class AccountService {
     private long handleWithdraw(AccountEvent accountEvent, Long currentBalance) {
         long newBalance = currentBalance;
         if (currentBalance - accountEvent.getAmount() < 0) {
-            log.debug("Insufficient balance of {} on user account {} to withdraw amount {}", currentBalance, accountEvent.getUserId(), accountEvent.getAmount());
+            log.info("Insufficient balance of {} on user account {} to withdraw amount {}", currentBalance, accountEvent.getUserId(), accountEvent.getAmount());
             accountEvent.setStatus(AccountEvent.Status.REJECTED);
         }
         else {
             newBalance = currentBalance - accountEvent.getAmount();
-            log.debug("Withdrew {} from user account {}. New balance is {}", accountEvent.getAmount(), accountEvent.getUserId(), newBalance);
+            log.info("Withdrew {} from user account {}. New balance is {}", accountEvent.getAmount(), accountEvent.getUserId(), newBalance);
         }
         return newBalance;
     }
@@ -80,7 +80,7 @@ public class AccountService {
     private long handleDeposit(AccountEvent accountEvent, Long currentBalance) {
         accountEvent.setStatus(AccountEvent.Status.FULFILLED);
         long newBalanace = currentBalance + accountEvent.getAmount();
-        log.debug("Added {} to user account {}. New balance is {}", accountEvent.getAmount(), accountEvent.getUserId(), newBalanace);
+        log.info("Added {} to user account {}. New balance is {}", accountEvent.getAmount(), accountEvent.getUserId(), newBalanace);
         return newBalanace;
     }
 
