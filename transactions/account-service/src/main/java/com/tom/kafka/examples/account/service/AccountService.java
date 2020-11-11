@@ -38,6 +38,9 @@ public class AccountService {
         KafkaUtils.addBootstrapServer(props);
 
         props.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG, LogAndContinueExceptionHandler.class);
+        props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE);
+        props.put("enable.auto.commit", "false");
+        props.put("isolation.level", "read_committed");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, AccountService.class.getName());
 
         addTopology();
