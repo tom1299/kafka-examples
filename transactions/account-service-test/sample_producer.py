@@ -34,7 +34,7 @@ for i in range(10):
 
     producer.begin_transaction()
     producer.produce('account-events', f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
-    # producer.produce('order-events', f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
+    producer.produce('order-events', f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
     producer.flush()
 
     if (amount % 2) == 0:
