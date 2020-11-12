@@ -109,3 +109,4 @@ Account-Events: 532: {"id": "179002c4-28a2-433a-97c1-addf39ea7a05"...
 
 ## TODOs
 * Ask a question in Kafka's mailing list why a call to `flush()` is needed in order for the `read_uncommitted` to work ?
+* Enhance shutdown of TransactionAwareConsumers to close consumers
