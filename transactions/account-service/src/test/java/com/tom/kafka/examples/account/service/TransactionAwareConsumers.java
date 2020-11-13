@@ -15,31 +15,49 @@ public class TransactionAwareConsumers {
 
     public static void main(String[] args) throws InterruptedException {
         Properties props = createDefaultProperties();
-        KafkaConsumer<String, String> uncommittedConsumer =
-                createConsumer(props, "read_uncommitted", "account-events");
 
+        final KafkaConsumer<String, String> uncommittedConsumer =
+                createConsumer(props, "read_uncommitted", "account-events");
         Runnable readUncommittedTask = () -> {
-            while (true) {
-                ConsumerRecords<String, String> records = uncommittedConsumer.poll(Duration.ofSeconds(100));
-                for (ConsumerRecord<String, String> record : records)
-                    System.out.println("Account-Events: " + record.offset() + ": " + record.value());
+            try {
+                while (true) {
+                    ConsumerRecords<String, String> records = uncommittedConsumer.poll(Duration.ofSeconds(100));
+                    for (ConsumerRecord<String, String> record : records)
+                        System.out.println("Account-Events: " + record.offset() + ": " + record.value());
+                }
+            }
+            catch (Exception e) {
+                uncommittedConsumer.close();
             }
         };
 
-        KafkaConsumer<String, String> committedConsumer =
+        final KafkaConsumer<String, String> committedConsumer =
                 createConsumer(props, "read_committed", "order-events");
         Runnable readCommittedTask = () -> {
-            while (true) {
-                ConsumerRecords<String, String> records = committedConsumer.poll(Duration.ofSeconds(100));
-                for (ConsumerRecord<String, String> record : records)
-                    System.out.println("Order-Events: " + record.offset() + ": " + record.value());
+            try {
+                while (true) {
+                    ConsumerRecords<String, String> records = committedConsumer.poll(Duration.ofSeconds(100));
+                    for (ConsumerRecord<String, String> record : records)
+                        System.out.println("Order-Events: " + record.offset() + ": " + record.value());
+                }
+            }
+            catch (Exception e) {
+                committedConsumer.close();
             }
         };
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        executorService.submit(readUncommittedTask);
-        executorService.submit(readCommittedTask);
-        CountDownLatch latch = new CountDownLatch(1);
+        Future readUncommittedFuture = executorService.submit(readUncommittedTask);
+        Future readCommittedFuture =  executorService.submit(readCommittedTask);
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            System.out.println("Shutting down consumers");
+            readUncommittedFuture.cancel(true);
+            readCommittedFuture.cancel(true);
+            latch.countDown();
+        }));
+
         latch.await();
     }
 
@@ -54,7 +72,7 @@ public class TransactionAwareConsumers {
 
     private static Properties createDefaultProperties() {
         Properties props = new Properties();
-        props.put("bootstrap.servers", "172.18.0.2:31147");
+        props.put("bootstrap.servers", "172.18.0.2:30195");
         props.put("key.deserializer", StringDeserializer.class.getName());
         props.put("value.deserializer", StringDeserializer.class.getName());
         props.put("enable.auto.commit", false);
