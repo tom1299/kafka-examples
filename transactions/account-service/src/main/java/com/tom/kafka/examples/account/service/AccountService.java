@@ -75,6 +75,7 @@ public class AccountService {
         }
         else {
             newBalance = currentBalance - accountEvent.getAmount();
+            accountEvent.setStatus(AccountEvent.Status.FULFILLED);
             log.info("Withdrew {} from user account {}. New balance is {}", accountEvent.getAmount(), accountEvent.getUserId(), newBalance);
         }
         return newBalance;
