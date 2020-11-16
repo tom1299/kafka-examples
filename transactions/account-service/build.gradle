@@ -5,7 +5,6 @@
  * For more details take a look at the Java Quickstart chapter in the Gradle
  * User Manual available at https://docs.gradle.org/6.6/userguide/tutorial_java_projects.html
  */
-
 plugins {
     // Apply the java plugin to add support for Java
     id 'java'
@@ -16,6 +15,7 @@ plugins {
 }
 
 version = '1.0'
+def serviceClass=project.properties['serviceClass'] ?: "com.tom.kafka.examples.account.service.AccountService"
 
 repositories {
     // Use jcenter for resolving dependencies.
@@ -40,7 +40,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClassName = 'com.tom.kafka.examples.account.service.AccountService'
+    mainClassName = "$serviceClass"
 }
 
 test {
@@ -52,11 +52,11 @@ test {
 task fatJar(type: Jar) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 	manifest {
-        attributes 'Implementation-Title': 'AccountService',
+        attributes 'Implementation-Title': "$serviceClass",
         	'Implementation-Version': archiveVersion,
-        	'Main-Class': 'com.tom.kafka.streams.example4.AccountProcessor'
+        	'Main-Class': "$serviceClass"
     }
-    archiveBaseName = project.name + '-all'
+    archiveBaseName = 'service'
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
