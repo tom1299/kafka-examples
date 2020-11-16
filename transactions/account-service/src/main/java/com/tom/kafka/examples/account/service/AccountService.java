@@ -3,7 +3,8 @@
  */
 package com.tom.kafka.examples.account.service;
 
-import com.tom.kafka.examples.account.service.model.AccountEvent;
+import com.tom.kafka.examples.KafkaUtils;
+import com.tom.kafka.examples.model.AccountEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -95,13 +96,13 @@ public class AccountService {
                                                             Long currentBalance) -> aggregate(account, accountEvent, currentBalance);
 
         KStream<String, AccountEvent> stream = builder.stream("account-events", Consumed.with(KafkaUtils.keySerde,
-                KafkaUtils.accountEventSerde));
+                KafkaUtils.getSerde(AccountEvent.class)));
 
         stream.groupByKey().aggregate(initializer, aggregator, Materialized
                 .<String, Long>as(Stores.inMemoryKeyValueStore("accounts")).withCachingDisabled()
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
         stream.selectKey((key, accountEvent) -> accountEvent.getId()).to("processed-account-events", Produced.with(KafkaUtils.keySerde,
-                KafkaUtils.accountEventSerde));
+                KafkaUtils.getSerde(AccountEvent.class)));
     }
 
     private void start(KafkaStreams streams) {

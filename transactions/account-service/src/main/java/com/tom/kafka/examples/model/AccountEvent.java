@@ -1,8 +1,7 @@
-package com.tom.kafka.examples.account.service.model;
+package com.tom.kafka.examples.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.*;
-import lombok.Builder.Default;
 
 @Data
 @NoArgsConstructor

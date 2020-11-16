@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.tom.kafka.examples.account.service.model;
+package com.tom.kafka.examples.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
