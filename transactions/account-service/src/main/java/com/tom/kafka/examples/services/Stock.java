@@ -60,4 +60,9 @@ public class Stock extends AbstractKafkaApp {
         stream.selectKey((key, stockEvent) -> stockEvent.getTransactionId()).to("processed-stock-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(StockEvent.class)));
     }
+
+    public static void main(String[] args) {
+        Stock app = new Stock();
+        app.run();
+    }
 }

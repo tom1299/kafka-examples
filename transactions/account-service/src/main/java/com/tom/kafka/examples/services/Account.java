@@ -16,7 +16,7 @@ public class Account extends AbstractKafkaApp {
 
     private Long aggregate(String account, AccountEvent accountEvent,
                            Long currentBalance) {
-        log.info("Processing account event for user {}", account);
+        log.info("Processing account event {} for user {}", accountEvent.getTransactionId(), account);
         long newBalance = 0L;
         if (accountEvent.getType() == AccountEvent.Type.DEPOSIT) {
             newBalance = handleDeposit(accountEvent, currentBalance);
@@ -53,7 +53,7 @@ public class Account extends AbstractKafkaApp {
         stream.groupByKey().aggregate(() -> 0L, this::aggregate, Materialized
                 .<String, Long>as(Stores.inMemoryKeyValueStore("accounts")).withCachingDisabled()
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
-        stream.selectKey((key, accountEvent) -> accountEvent.getId()).to("processed-account-transactions", Produced.with(KafkaUtils.keySerde,
+        stream.selectKey((key, accountEvent) -> accountEvent.getTransactionId()).to("processed-account-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(AccountEvent.class)));
     }
 

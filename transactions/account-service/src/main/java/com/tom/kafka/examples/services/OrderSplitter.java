@@ -29,6 +29,7 @@ public class OrderSplitter extends AbstractKafkaApp {
 
                 objects.add(accountEvent);
                 objects.add(stockEvent);
+                orderEvent.setStatus(OrderEvent.Status.PENDING);
                 objects.add(orderEvent);
             }
             catch (Exception e) {
@@ -45,7 +46,7 @@ public class OrderSplitter extends AbstractKafkaApp {
 
         splitStream[0].selectKey((key, accountEvent) -> ((AccountEvent)accountEvent).getAccountNumber()).to("account-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(AccountEvent.class)));
         splitStream[1].selectKey((key, stockEvent) -> ((StockEvent)stockEvent).getStock()).to("stock-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(StockEvent.class)));
-        splitStream[1].selectKey((key, orderEvent) -> ((OrderEvent)orderEvent).getTransactionId()).to("pending-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(OrderEvent.class)));
+        splitStream[2].selectKey((key, orderEvent) -> ((OrderEvent)orderEvent).getTransactionId()).to("pending-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(OrderEvent.class)));
     }
 
     private StockEvent createStockEvent(OrderEvent orderEvent) {
@@ -60,7 +61,7 @@ public class OrderSplitter extends AbstractKafkaApp {
         AccountEvent accountEvent = AccountEvent.builder().id(createUUID())
                 .transactionId(orderEvent.getTransactionId()).accountNumber(orderEvent.getAccountNumber())
                 .amount(orderEvent.getAmount()).userId(orderEvent.getUserId()).amount(orderEvent.getPrice()).build();
-        accountEvent.setType(orderEvent.getType() == OrderEvent.Type.BUY ? AccountEvent.Type.DEPOSIT : AccountEvent.Type.WITHDRAW);
+        accountEvent.setType(orderEvent.getType() == OrderEvent.Type.BUY ? AccountEvent.Type.WITHDRAW : AccountEvent.Type.DEPOSIT);
         return accountEvent;
     }
 

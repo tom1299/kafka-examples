@@ -12,8 +12,9 @@ public class OrderEvent {
 	public enum Status {
 		NEW("new"),
 		REJECTED("rejected"),
+		PENDING("pending"),
 		FULFILLED("fulfilled");
-		
+
 		@Getter
 		@Setter
 		@JsonValue
