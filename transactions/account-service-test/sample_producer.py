@@ -14,33 +14,62 @@ producer = Producer({
 
 producer.init_transactions()
 
-for i in range(10):
-    accountEventId = uuid.uuid4()
-    transactionId = uuid.uuid4()
-    accountNumber = str(random.choice(list(range(1000, 1003))))
+
+def create_account_event():
+    account_number = get_account_number()
     amount = random.choice(list(range(1, 100)))
     account_event = {
-      "id": f"{accountEventId}",
-      "transactionId": f"{transactionId}",
-      "amount": amount,
-      "userId": f"{accountNumber}",
-      "status": "new",
-      "accountNumber": f"{accountNumber}",
-      "type": random.choice(["deposit", "withdraw"])
+        "id": f"{uuid.uuid4()}",
+        "transactionId": f"{uuid.uuid4()}",
+        "amount": amount,
+        "userId": f"{account_number}",
+        "status": "new",
+        "accountNumber": f"{account_number}",
+        "type": random.choice(["deposit", "withdraw"])
     }
+    return account_event
 
-    message = json.dumps(account_event)
-    print(f'Sending account event {message}')
+
+def create_order_event():
+    amount = random.choice(list(range(1, 100)))
+    account_number = get_account_number()
+    account_event = {
+        "id": f"{uuid.uuid4()}",
+        "transactionId": f"{uuid.uuid4()}",
+        "amount": amount,
+        "userId": f"{account_number}",
+        "status": "new",
+        "accountNumber": f"{account_number}",
+        "stock": random.choice(["StockA", "StockB"]),
+        "type": random.choice(["buy", "sell"])
+    }
+    return account_event
+
+
+def create_price_event():
+    price = random.choice(list(range(1, 100)))
+    price_event = {
+        "id": f"{uuid.uuid4()}",
+        "newPrice": price,
+        "stock": random.choice(["StockA", "StockB"]),
+    }
+    return price_event
+
+
+def get_account_number():
+    return str(random.choice(list(range(1000, 1003))))
+
+
+for i in range(1):
+    event = create_order_event()
+
+    message = json.dumps(event)
+    print(f'Sending event {message}')
 
     producer.begin_transaction()
-    producer.produce('account-events', f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
-    producer.produce('order-events', f'{message}'.encode('utf-8'), accountNumber.encode("utf-8"))
+    producer.produce('incoming-orders', f'{message}'.encode('utf-8'), event['transactionId'].encode("utf-8"))
     producer.flush()
 
-    if (amount % 2) == 0:
-        print(f'Aborting transaction for account event {accountEventId}')
-        producer.abort_transaction()
-    else:
-        producer.commit_transaction()
+    producer.commit_transaction()
 
     time.sleep(0.5)

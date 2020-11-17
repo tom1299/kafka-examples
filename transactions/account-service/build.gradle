@@ -28,6 +28,9 @@ dependencies {
     implementation group: 'org.apache.kafka', name: 'kafka-streams', version: '2.5.0'
 	// https://mvnrepository.com/artifact/org.projectlombok/lombok
     compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.12'
+    // https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
+    implementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
+
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
 
     // Use JUnit Jupiter API for testing.

@@ -62,6 +62,10 @@ public class KafkaUtils {
 			streams.close();
 			latch.countDown();
 		}, "streams-shutdown-hook"));
+		streams.setUncaughtExceptionHandler((thread, throwable) -> {
+			log.error("An uncaught exception occurred while processing messages. Shutting down");
+			latch.countDown();
+		});
 	}
 
 	public static <T> Serde<T> getSerde(Class<T> clazz) {

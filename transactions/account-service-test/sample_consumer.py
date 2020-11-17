@@ -8,7 +8,7 @@ c = Consumer({
     'auto.offset.reset': 'earliest'
 })
 
-c.subscribe(['processed-account-events'])
+c.subscribe(['processed-account-transactions'])
 
 while True:
     msg = c.poll(1.0)
