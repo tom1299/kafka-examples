@@ -12,7 +12,8 @@ public class AccountEvent {
 	public enum Status {
 		NEW("new"),
 		REJECTED("rejected"),
-		FULFILLED("fulfilled");
+		FULFILLED("fulfilled"),
+		COMPENSATION("compensation");
 		
 		@Getter
 		@Setter

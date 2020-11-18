@@ -4,6 +4,7 @@
 package com.tom.kafka.examples.services;
 
 import com.tom.kafka.examples.KafkaUtils;
+import com.tom.kafka.examples.model.AccountEvent;
 import com.tom.kafka.examples.model.StockEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
@@ -19,11 +20,16 @@ public class Stock extends AbstractKafkaApp {
                            Long currentQuantity) {
         log.info("Processing stock event {} for stock {}", stockEvent.getTransactionId(), stock);
         long quantity = 0L;
+        StockEvent.Status oldStatus = stockEvent.getStatus();
         if (stockEvent.getType() == StockEvent.Type.ADDITION) {
             quantity = handleAddition(stockEvent, currentQuantity);
         }
         else if (stockEvent.getType() == StockEvent.Type.REMOVAL) {
             quantity = handleRemoval(stockEvent, currentQuantity);
+        }
+
+        if (oldStatus == StockEvent.Status.COMPENSATION) {
+            stockEvent.setStatus(StockEvent.Status.COMPENSATION);
         }
         return quantity;
     }
@@ -59,7 +65,12 @@ public class Stock extends AbstractKafkaApp {
         stream.groupByKey().aggregate(initializer, this::aggregate, Materialized
                 .<String, Long>as(Stores.inMemoryKeyValueStore("stocks")).withCachingDisabled()
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
-        stream.selectKey((key, stockEvent) -> stockEvent.getTransactionId()).to("processed-stock-transactions", Produced.with(KafkaUtils.keySerde,
+
+        stream.filter(((key, stockEvent) -> {
+            log.info(stockEvent.toString());
+            return stockEvent.getStatus() != StockEvent.Status.COMPENSATION;
+        }))
+                .selectKey((key, stockEvent) -> stockEvent.getTransactionId()).to("processed-stock-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(StockEvent.class)));
         return builder.build();
     }

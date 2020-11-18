@@ -61,6 +61,9 @@ public class OrderFinalizer extends AbstractKafkaApp {
                     if (!stockStatus) {
                         orderEvent.setStatus(OrderEvent.Status.REJECTED);
                     }
+                    else {
+                        orderEvent.setStatus(OrderEvent.Status.FULFILLED);
+                    }
                     log.info("Final status of transaction {} is {}", orderEvent.getTransactionId(), orderEvent.getStatus());
                     return orderEvent;
                 },

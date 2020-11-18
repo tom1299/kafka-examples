@@ -31,7 +31,7 @@ def create_account_event():
 
 
 def create_order_event():
-    amount = random.choice(list(range(1, 100)))
+    amount = 20
     account_number = get_account_number()
     account_event = {
         "id": f"{uuid.uuid4()}",

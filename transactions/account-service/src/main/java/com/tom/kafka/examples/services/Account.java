@@ -19,10 +19,14 @@ public class Account extends AbstractKafkaApp {
                            Long currentBalance) {
         log.info("Processing account event {} for user {}", accountEvent.getTransactionId(), account);
         long newBalance = 0L;
+        AccountEvent.Status oldStatus = accountEvent.getStatus();
         if (accountEvent.getType() == AccountEvent.Type.DEPOSIT) {
             newBalance = handleDeposit(accountEvent, currentBalance);
         } else if (accountEvent.getType() == AccountEvent.Type.WITHDRAW) {
             newBalance = handleWithdraw(accountEvent, currentBalance);
+        }
+        if (oldStatus == AccountEvent.Status.COMPENSATION) {
+            accountEvent.setStatus(AccountEvent.Status.COMPENSATION);
         }
         return newBalance;
     }
@@ -55,8 +59,12 @@ public class Account extends AbstractKafkaApp {
         stream.groupByKey().aggregate(() -> 0L, this::aggregate, Materialized
                 .<String, Long>as(Stores.inMemoryKeyValueStore("accounts")).withCachingDisabled()
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
-        stream.selectKey((key, accountEvent) -> accountEvent.getTransactionId()).to("processed-account-transactions", Produced.with(KafkaUtils.keySerde,
+
+        stream.filter(((key, accountEvent) -> accountEvent.getStatus() != AccountEvent.Status.COMPENSATION))
+                .selectKey((key, accountEvent) -> accountEvent.getTransactionId())
+                .to("processed-account-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(AccountEvent.class)));
+
         return builder.build();
     }
 
