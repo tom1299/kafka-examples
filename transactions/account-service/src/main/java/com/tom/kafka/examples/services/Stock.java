@@ -8,6 +8,7 @@ import com.tom.kafka.examples.model.StockEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.Stores;
 
@@ -48,7 +49,8 @@ public class Stock extends AbstractKafkaApp {
         return newQuantity;
     }
 
-    protected void addTopology(StreamsBuilder builder) {
+    protected Topology addTopology() {
+        StreamsBuilder builder = new StreamsBuilder();
         Initializer<Long> initializer = () -> 0L;
 
         KStream<String, StockEvent> stream = builder.stream("stock-transactions", Consumed.with(KafkaUtils.keySerde,
@@ -59,6 +61,7 @@ public class Stock extends AbstractKafkaApp {
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
         stream.selectKey((key, stockEvent) -> stockEvent.getTransactionId()).to("processed-stock-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(StockEvent.class)));
+        return builder.build();
     }
 
     public static void main(String[] args) {

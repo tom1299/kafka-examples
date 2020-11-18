@@ -16,11 +16,8 @@ public abstract class AbstractKafkaApp {
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    private final StreamsBuilder builder;
-
     public AbstractKafkaApp() {
         super();
-        builder = new StreamsBuilder();
     }
 
     public void run() {
@@ -33,8 +30,7 @@ public abstract class AbstractKafkaApp {
         props.put("isolation.level", "read_committed");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, this.getClass().getSimpleName());
 
-        addTopology(this.builder);
-        final Topology topology = builder.build();
+        final Topology topology = addTopology();
         log.info(topology.describe().toString());
 
         final KafkaStreams streams = new KafkaStreams(topology, props);
@@ -44,7 +40,7 @@ public abstract class AbstractKafkaApp {
         start(streams);
     }
 
-    protected abstract void addTopology(StreamsBuilder builder);
+    protected abstract Topology addTopology();
 
     private void start(KafkaStreams streams) {
         try {

@@ -8,6 +8,7 @@ import com.tom.kafka.examples.model.AccountEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.state.Stores;
 
@@ -46,7 +47,8 @@ public class Account extends AbstractKafkaApp {
         return newBalance;
     }
 
-    protected void addTopology(StreamsBuilder builder) {
+    protected Topology addTopology() {
+        StreamsBuilder builder = new StreamsBuilder();
         KStream<String, AccountEvent> stream = builder.stream("account-transactions", Consumed.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(AccountEvent.class)));
 
@@ -55,6 +57,7 @@ public class Account extends AbstractKafkaApp {
                 .withKeySerde(Serdes.String()).withValueSerde(Serdes.Long()));
         stream.selectKey((key, accountEvent) -> accountEvent.getTransactionId()).to("processed-account-transactions", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(AccountEvent.class)));
+        return builder.build();
     }
 
     public static void main(String[] args) {

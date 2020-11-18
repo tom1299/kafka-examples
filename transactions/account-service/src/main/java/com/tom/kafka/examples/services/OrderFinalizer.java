@@ -8,9 +8,9 @@ import com.tom.kafka.examples.model.AccountEvent;
 import com.tom.kafka.examples.model.OrderEvent;
 import com.tom.kafka.examples.model.StockEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.functors.FalsePredicate;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
 
 import java.time.Duration;
@@ -18,8 +18,8 @@ import java.time.Duration;
 @Slf4j
 public class OrderFinalizer extends AbstractKafkaApp {
 
-
-    protected void addTopology(StreamsBuilder builder) {
+    protected Topology addTopology() {
+        StreamsBuilder builder = new StreamsBuilder();
 
         KStream<String, StockEvent> stockStream = builder.stream("processed-stock-transactions", Consumed.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(StockEvent.class)));
@@ -33,7 +33,7 @@ public class OrderFinalizer extends AbstractKafkaApp {
         KStream<String, OrderEvent> accountAndStockJoined = pendingOrders.join(accountStream,
                 (orderEvent, accountEvent) -> {
                     log.info("Checking transaction {} with account status", orderEvent.getTransactionId());
-                    Boolean accountStatus = accountEvent.getStatus() == AccountEvent.Status.FULFILLED;
+                    boolean accountStatus = accountEvent.getStatus() == AccountEvent.Status.FULFILLED;
                     log.info("Account status for transaction {} is {}",
                             accountEvent.getTransactionId(), accountStatus);
                     if (!accountStatus) {
@@ -55,7 +55,7 @@ public class OrderFinalizer extends AbstractKafkaApp {
                         log.info("Order for transaction {} already rejected", orderEvent.getTransactionId());
                         return orderEvent;
                     }
-                    Boolean stockStatus = stockEvent.getStatus() == StockEvent.Status.FULFILLED;
+                    boolean stockStatus = stockEvent.getStatus() == StockEvent.Status.FULFILLED;
                     log.info("Stock status for transaction {} is {}",
                             stockEvent.getTransactionId(), stockStatus);
                     if (!stockStatus) {
@@ -72,6 +72,7 @@ public class OrderFinalizer extends AbstractKafkaApp {
         );
 
         finaLOrder.selectKey((key, orderEvent) -> orderEvent.getTransactionId()).to("finished-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(OrderEvent.class)));
+        return builder.build();
     }
 
     public static void main(String[] args) {

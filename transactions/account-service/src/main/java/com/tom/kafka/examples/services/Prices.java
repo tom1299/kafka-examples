@@ -9,6 +9,7 @@ import com.tom.kafka.examples.model.PriceEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
@@ -21,45 +22,49 @@ import org.apache.kafka.streams.state.Stores;
 @Slf4j
 public class Prices extends AbstractKafkaApp {
 
-    public static final String PRICES = "prices";
+    public static final String PRICES_STATE_STORE_NAME = "prices";
 
-    protected void addTopology(StreamsBuilder builder) {
+    private static Processor<String, PriceEvent> updatePrices() {
+        return new Processor<String, PriceEvent>() {
+
+            KeyValueStore<String, Long> prices;
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public void init(ProcessorContext context) {
+                this.prices = (KeyValueStore<String, Long>) context.getStateStore(PRICES_STATE_STORE_NAME);
+            }
+
+            @Override
+            public void process(String key, PriceEvent priceEvent) {
+                log.info("Processing price event for stock {}", priceEvent.getStock());
+                Long currentPrice = prices.get(priceEvent.getStock());
+                log.info("Current price for for stock {} is {}", priceEvent.getStock(), currentPrice);
+                prices.put(priceEvent.getStock(), priceEvent.getNewPrice());
+                log.info("New price for for stock {} set to {}", priceEvent.getStock(), priceEvent.getNewPrice());
+            }
+
+            @Override
+            public void close() {
+                // No close necessary
+            }
+        };
+    }
+
+    protected Topology addTopology() {
+        StreamsBuilder builder = new StreamsBuilder();
         KStream<String, PriceEvent> priceEventStream = builder.stream("price-updates", Consumed.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(PriceEvent.class)));
 
         StoreBuilder<KeyValueStore<String, Long>> priceStoreSupplier = Stores.keyValueStoreBuilder(
-                Stores.persistentKeyValueStore(PRICES),
+                Stores.persistentKeyValueStore(PRICES_STATE_STORE_NAME),
                 Serdes.String(),
                 Serdes.Long())
                 .withCachingEnabled();
 
         builder.addStateStore(priceStoreSupplier);
 
-        priceEventStream.process(() -> {
-            return new Processor<String, PriceEvent>() {
-
-                KeyValueStore<String, Long> prices;
-
-                @Override
-                public void init(ProcessorContext context) {
-                    this.prices = (KeyValueStore<String, Long>) context.getStateStore(PRICES);
-                }
-
-                @Override
-                public void process(String key, PriceEvent priceEvent) {
-                    log.info("Processing price event for stock {}", priceEvent.getStock());
-                    Long currentPrice = prices.get(priceEvent.getStock());
-                    log.info("Current price for for stock {} is {}", priceEvent.getStock(), currentPrice);
-                    prices.put(priceEvent.getStock(), priceEvent.getNewPrice());
-                    log.info("New price for for stock {} set to {}", priceEvent.getStock(), priceEvent.getNewPrice());
-                }
-
-                @Override
-                public void close() {
-                    // No close necessary
-                }
-            };
-        }, PRICES);
+        priceEventStream.process(Prices::updatePrices, PRICES_STATE_STORE_NAME);
 
         priceEventStream.selectKey((key, accountEvent) -> accountEvent.getId()).to("processed-price-updates", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(PriceEvent.class)));
@@ -72,8 +77,9 @@ public class Prices extends AbstractKafkaApp {
             KeyValueStore<String, Long> prices;
 
             @Override
+            @SuppressWarnings("unchecked")
             public void init(ProcessorContext context) {
-                this.prices = (KeyValueStore<String, Long>) context.getStateStore(PRICES);
+                this.prices = (KeyValueStore<String, Long>) context.getStateStore(PRICES_STATE_STORE_NAME);
             }
 
             @Override
@@ -90,10 +96,12 @@ public class Prices extends AbstractKafkaApp {
             public void close() {
                 // No close necessary
             }
-        }, PRICES);
+        }, PRICES_STATE_STORE_NAME);
 
         orderEventStream.to("priced-orders", Produced.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(OrderEvent.class)));
+
+        return builder.build();
     }
 
     public static void main(String[] args) {

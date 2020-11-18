@@ -6,6 +6,7 @@ import com.tom.kafka.examples.model.OrderEvent;
 import com.tom.kafka.examples.model.StockEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
@@ -17,7 +18,9 @@ import java.util.UUID;
 public class OrderSplitter extends AbstractKafkaApp {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    protected  void addTopology(StreamsBuilder builder) {
+    protected Topology addTopology() {
+        StreamsBuilder builder = new StreamsBuilder();
+
         KStream<String, OrderEvent> orderStream = builder.stream("priced-orders", Consumed.with(KafkaUtils.keySerde,
                 KafkaUtils.getSerde(OrderEvent.class)));
 
@@ -47,6 +50,8 @@ public class OrderSplitter extends AbstractKafkaApp {
         splitStream[0].selectKey((key, accountEvent) -> ((AccountEvent)accountEvent).getAccountNumber()).to("account-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(AccountEvent.class)));
         splitStream[1].selectKey((key, stockEvent) -> ((StockEvent)stockEvent).getStock()).to("stock-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(StockEvent.class)));
         splitStream[2].selectKey((key, orderEvent) -> ((OrderEvent)orderEvent).getTransactionId()).to("pending-transactions", Produced.with(KafkaUtils.keySerde, KafkaUtils.getSerde(OrderEvent.class)));
+
+        return builder.build();
     }
 
     private StockEvent createStockEvent(OrderEvent orderEvent) {
@@ -54,6 +59,7 @@ public class OrderSplitter extends AbstractKafkaApp {
                 .transactionId(orderEvent.getTransactionId()).amount(orderEvent.getAmount())
                 .stock(orderEvent.getStock()).build();
         stockEvent.setType(orderEvent.getType() == OrderEvent.Type.BUY ? StockEvent.Type.REMOVAL : StockEvent.Type.ADDITION);
+        log.info("Created stock event {}", stockEvent);
         return stockEvent;
     }
 
@@ -62,6 +68,7 @@ public class OrderSplitter extends AbstractKafkaApp {
                 .transactionId(orderEvent.getTransactionId()).accountNumber(orderEvent.getAccountNumber())
                 .amount(orderEvent.getAmount()).userId(orderEvent.getUserId()).amount(orderEvent.getPrice()).build();
         accountEvent.setType(orderEvent.getType() == OrderEvent.Type.BUY ? AccountEvent.Type.WITHDRAW : AccountEvent.Type.DEPOSIT);
+        log.info("Created account event {}", accountEvent);
         return accountEvent;
     }
 
