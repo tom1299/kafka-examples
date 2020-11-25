@@ -1,0 +1,13 @@
+---
+context: "kafka-examples"
+projects:
+  - name: "order-example"
+    topics:
+      - name: "incoming-orders"
+        config:
+          replication.factor: "1"
+          num.partitions: "3"
+      - name: "finished-orders"
+        config:
+          replication.factor: "1"
+          num.partitions: "3"
